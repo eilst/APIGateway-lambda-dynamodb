@@ -1,0 +1,116 @@
+service: menu-backend
+
+provider:
+  name: aws
+  runtime: python3.6
+  environment:
+    DYNAMODB_TABLE: MenuItem
+    DYNAMODB_TABLE_CAT: MenuCategory
+
+  # Create an IAM role with access to DyanoDB tables
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_CAT}"
+functions:
+  #Definition of lambda functions with APIGatway endpoints
+  #TODO: Auth
+  create:
+    handler: create.create
+    events:
+      - http:
+          path: menu
+          method: post
+          cors: true
+  create_category:
+    handler: create_category.create_category
+    events:
+      - http:
+          path: cat
+          method: post
+          cors: true
+  list:
+    handler: list.list
+    events:
+      - http:
+          path: menu
+          method: get
+          cors: true
+  get:
+    handler: get.get
+    events:
+      - http:
+          path: menu/{id}
+          method: get
+          cors: true
+  get_cat:
+    handler: get_cat.get_cat
+    events:
+      - http:
+          path: cat/{id}
+          method: get
+          cors: true
+  delete:
+    handler: delete.delete
+    events:
+      - http:
+          path: menu/{id}
+          method: delete
+          cors: true
+  delete_cat:
+    handler: delete_cat.delete_cat
+    events:
+      - http:
+          path: menu/{id}
+          method: delete
+          cors: true
+resources:
+  #Two DynamoDb tables
+  Resources:
+    TodosDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: uuid
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: uuid
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+    CatDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: uuid
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: uuid
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_CAT}
